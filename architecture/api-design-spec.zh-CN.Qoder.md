@@ -461,6 +461,22 @@ public ReturnData<ElementVO> updateElement(
 
 ---
 
+## 规则清单
+
+| 规则 | 名称 | 优先级 |
+|------|------|--------|
+| 规则 1 | RESTful 设计原则 | HIGH |
+| 规则 2 | API 版本控制 | CRITICAL |
+| 规则 3 | 请求与响应格式 | HIGH |
+| 规则 4 | HTTP 状态码使用 | MEDIUM |
+| 规则 5 | 查询参数规范 | MEDIUM |
+| 规则 6 | 认证与授权 | CRITICAL |
+| 规则 7 | 错误处理标准 | HIGH |
+| 规则 8 | 参数校验 | HIGH |
+| 规则 9 | 幂等性设计 | MEDIUM |
+
+---
+
 ## 输出报告格式
 
 检查完成后，请按以下格式输出报告：
