@@ -2,15 +2,15 @@
 name: java-rule
 description: "java代码规范规则"
 ---
-# Java 统一代码规范（Rule v2.0.0）
+# Java 统一代码规范（Rule v2.1.0）
 
 ## 版本核心信息（供 Qoder Skill 解析校验）
 
-- 规则版本：2.0.0
-- 适配 Skill 版本：java-code-check >= v2.0.0
+- 规则版本：2.1.0
+- 适配 Skill 版本：java-code-check >= v2.1.0
 - 生效时间：2026-03-18
-- 变更类型：主版本（融合空指针安全、日志规范、安全漏洞防护、异常处理、命名规范、Spring 最佳实践六大专项检查规则）
-- 技术栈适配：Spring Boot 2.7+、Spring Cloud、MyBatis 3.5+、SLF4J 1.7+
+- 变更类型：次版本（融合 AI 代码块标记规则，统一代码溯源标记规范）
+- 技术栈适配：Spring Boot 2.3+、Spring Cloud、MyBatis 3.5+、SLF4J 1.7+
 - 基准规范：《阿里巴巴 Java 开发手册（黄山版）》+ OWASP Top 10
 
 - 违规等级定义：
@@ -597,6 +597,100 @@ String sql = "SELECT * FROM user WHERE id = " + userId;  // 注入风险
 
 ---
 
+### 11. AI 代码块标记规范（强制级）
+
+#### 11.1 规则说明
+
+Qoder 在每次对话中编写的 **每个代码块** 必须在前后分别添加 AI 标记注释，用于脚本扫描统计 AI 编写的代码行数。
+
+#### 11.2 标记格式
+
+- **代码块开始**：`// @AI-Begin {5位随机码} {日期} @@Qoder`
+- **代码块结束**：`// @AI-End {5位随机码} {日期} @@Qoder`
+
+其中：
+- `{5位随机码}`：5 位字母和数字的随机组合（如：`A1b2C`、`X9kM3`）
+- `{日期}`：8 位数字日期格式 `YYYYMMDD`，使用东 8 区时区（北京时间）
+
+#### 11.3 关键约束
+
+| 判定标准 | 状态 |
+|---------|------|
+| AI 生成的代码块缺少 `@AI-Begin` / `@AI-End` 标记 | **FAIL** |
+| 标记仅添加在类文件首行和末行，而非每个代码块前后 | **FAIL**（应在每个独立代码块前后分别添加） |
+| 单行代码未添加 AI 标记 | **FAIL**（即使只写了一行代码也必须添加） |
+| 日期未使用东 8 区（北京时间） | **WARN** |
+| 随机码不是 5 位字母数字组合 | **WARN** |
+| 不同文件类型使用了错误的注释语法 | **FAIL** |
+
+#### 11.4 各语言标记格式
+
+| 文件类型 | 开始标记 | 结束标记 |
+|---------|---------|---------|
+| Java / JavaScript / TypeScript / Go / Rust / C / C++ / JSON | `// @AI-Begin XXXXX YYYYMMDD @@Qoder` | `// @AI-End XXXXX YYYYMMDD @@Qoder` |
+| XML / POM / HTML / Vue | `<!-- @AI-Begin XXXXX YYYYMMDD @@Qoder -->` | `<!-- @AI-End XXXXX YYYYMMDD @@Qoder -->` |
+| Properties / Python / YAML | `# @AI-Begin XXXXX YYYYMMDD @@Qoder` | `# @AI-End XXXXX YYYYMMDD @@Qoder` |
+| SQL | `-- @AI-Begin XXXXX YYYYMMDD @@Qoder` | `-- @AI-End XXXXX YYYYMMDD @@Qoder` |
+| CSS | `/* @AI-Begin XXXXX YYYYMMDD @@Qoder */` | `/* @AI-End XXXXX YYYYMMDD @@Qoder */` |
+
+#### 11.5 代码示例
+
+**Java 示例：**
+
+```java
+// @AI-Begin A1b2C 20260318 @@Qoder
+public void hello() {
+    System.out.println("Hello");
+}
+// @AI-End A1b2C 20260318 @@Qoder
+```
+
+**XML/POM 示例：**
+
+```xml
+<!-- @AI-Begin B2c3D 20260318 @@Qoder -->
+<dependency>
+    <groupId>com.example</groupId>
+    <artifactId>demo</artifactId>
+</dependency>
+<!-- @AI-End B2c3D 20260318 @@Qoder -->
+```
+
+**Properties 示例：**
+
+```properties
+# @AI-Begin C3d4E 20260318 @@Qoder
+server.port=8080
+# @AI-End C3d4E 20260318 @@Qoder
+```
+
+**SQL 示例：**
+
+```sql
+-- @AI-Begin D4e5F 20260318 @@Qoder
+SELECT * FROM t_user WHERE user_id = #{userId}
+-- @AI-End D4e5F 20260318 @@Qoder
+```
+
+**CSS 示例：**
+
+```css
+/* @AI-Begin E5f6G 20260318 @@Qoder */
+.container { display: flex; }
+/* @AI-End E5f6G 20260318 @@Qoder */
+```
+
+#### 11.6 重要注意事项
+
+1. **位置要求**：不是在类文件的首行和末行增加，而是在 **对话编写的每个代码块** 前后增加；
+2. **单行代码**：即使只写了一行代码，也必须增加 AI 标记注释；
+3. **随机码一致性**：同一对代码块首尾的 5 位随机码必须一致，但不同代码块之间应使用不同的随机码；
+4. **跨会话持久化**：此规则在所有会话中自动生效，无需手动开启；
+5. **触发时机**：在代码生成时自动触发（`on_code_generation`）；
+6. **规则目的**：方便脚本扫描统计 Qoder 编写的代码行数。
+
+---
+
 ## 校验结果输出规范（供 Qoder Skill 参考）
 
 ### 输出原则
@@ -604,7 +698,7 @@ String sql = "SELECT * FROM user WHERE id = " + userId;  // 注入风险
 1. **严重违规（FAIL）**：列出问题+修复示例，Skill 强制阻断代码提交（如 SQL 拼接、捕获大异常、反序列化漏洞）；
 2. **高危违规（WARN）**：列出问题+自动修复代码，需人工确认（如日志脱敏缺失、事务配置不当）；
 3. **规范违规（INFO）**：Skill 自动修复，生成修复报告（如命名错误、空行不规范）；
-4. **输出格式**：按模块分类（命名/注释/日志/异常/空指针/安全/Spring），标注违规行数+修复方式。
+4. **输出格式**：按模块分类（命名/注释/日志/异常/空指针/安全/Spring/AI标记），标注违规行数+修复方式。
 
 ### 报告模板
 
@@ -648,6 +742,10 @@ String sql = "SELECT * FROM user WHERE id = " + userId;  // 注入风险
 | 文件 | 行号 | 问题描述 | 状态 |
 |------|------|---------|------|
 
+### AI 代码块标记
+| 文件 | 行号 | 问题描述 | 状态 |
+|------|------|---------|------|
+
 ## 修复建议
 1. [FAIL] {具体问题及修复方案}
 2. [WARN] {具体问题及修复方案}
@@ -658,5 +756,6 @@ String sql = "SELECT * FROM user WHERE id = " + userId;  // 注入风险
 
 ## 版本变更记录（按倒序）
 
+- v2.1.0：融合 AI 代码块标记规则（ai-code-marker），新增第 11 章 AI 代码块标记规范，涵盖标记格式、各语言注释语法、关键约束判定标准及代码示例；报告模板新增"AI 代码块标记"检查维度。
 - v2.0.0：融合六大专项检查规则（空指针安全、日志规范、安全漏洞防护、异常处理、命名规范、Spring 最佳实践），新增 OWASP Top 10 安全防护规则（XSS/路径遍历/硬编码/反序列化/文件上传）、Spring Boot/Cloud 最佳实践规则（依赖注入/事务/@Async/Feign/循环依赖）、扩展命名规范（分层后缀/布尔属性/集合变量）、扩展异常处理（吞异常/finally return/异常链/事务异常/统一异常处理器）、扩展日志规范（Logger 声明/占位符/异常日志）、扩展空指针安全（链式调用/拆箱/Optional/外部数据源）；统一违规等级为 FAIL/WARN/INFO 三级体系。
 - v1.0.0：基于阿里 Java 手册黄山版重构，新增生产级日志脱敏、SQL 防注入、空指针防护规则，适配 Spring Boot 2.7+；集合初始化、魔法值、static 使用规则，优化注释模板；包含命名、注释、日志基础规则。
